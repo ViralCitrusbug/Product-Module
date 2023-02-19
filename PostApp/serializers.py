@@ -22,7 +22,7 @@ class ProductSerializer(ModelSerializer):
         model = Product
         fields = "__all__"
 
-    def create(self, validated_data) -> Product:
+    def create(self, validated_data):
         cat_name = validated_data.pop("category")
         category = CategorySerializer(data=cat_name)
         if category.is_valid():
@@ -34,4 +34,14 @@ class ProductSerializer(ModelSerializer):
             return Response(category.errors)
 
     def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+        cat_name = validated_data.pop("category")
+        category = CategorySerializer(data=cat_name)
+        if category.is_valid():
+            cat = category.save()
+            validated_data.update({"category": cat})
+            product = self.Meta.model.objects.filter(pk=instance.pk)
+            product.name = validated_data.get("name")
+            return product
+        else:
+            return Response(category.errors)
+        
